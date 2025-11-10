@@ -428,6 +428,22 @@ app.get('/buscar', requireAuth, (req, res) => {
   );
 });
 
+// Eliminar cita
+app.post('/citas/:id/eliminar', requireAuth, (req, res) => {
+  const id = req.params.id;
+  const { fecha } = req.body;
+
+  db.run('DELETE FROM citas WHERE id = ?', [id], (err) => {
+    if (err) {
+      console.error(err);
+      return res.send('Error eliminando cita');
+    }
+
+    res.redirect('/citas?fecha=' + fecha);
+  });
+});
+
+
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
