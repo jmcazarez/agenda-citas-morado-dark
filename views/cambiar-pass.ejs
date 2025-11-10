@@ -1,0 +1,33 @@
+<%- include('partials/header') %>
+
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <h3 class="mb-3 text-center">Cambiar contraseña</h3>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <% if (success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <form action="/cambiar-pass" method="post" class="row g-3">
+      <div class="col-12">
+        <label class="form-label">Contraseña actual</label>
+        <input type="password" name="actual" class="form-control" required />
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Nueva contraseña</label>
+        <input type="password" name="nueva" class="form-control" required />
+      </div>
+
+      <div class="col-12 mt-2">
+        <button class="btn btn-primary w-100" type="submit">Actualizar contraseña</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

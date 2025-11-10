@@ -1,0 +1,227 @@
+/* ====== Tema morado pastel ====== */
+
+body {
+  font-size: 16px;
+  background-color: #f5f3fb;
+  color: #2d1f4f;
+}
+
+/* Navbar */
+.navbar {
+  background-color: #7c6fc9 !important;
+}
+
+.navbar-brand,
+.nav-link,
+.navbar-text {
+  color: #ffffff !important;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+}
+
+/* Botones */
+.btn-primary {
+  background-color: #9b8de1;
+  border-color: #9b8de1;
+}
+
+.btn-primary:hover {
+  background-color: #7c6fc9;
+  border-color: #7c6fc9;
+}
+
+.btn-outline-secondary {
+  color: #7c6fc9;
+  border-color: #7c6fc9;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #9b8de1;
+  color: #fff;
+}
+
+/* Tablas */
+.table > :not(caption) > * > * {
+  background-color: #ffffff;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: #f2effd;
+}
+
+/* Calendario */
+.calendar-table td {
+  height: 70px;
+  vertical-align: middle;
+  padding: 4px;
+  background-color: #ffffff;
+}
+
+.calendar-table a.btn {
+  font-size: 1rem;
+  padding: 8px 0;
+  border-radius: 8px;
+  color: #2d1f4f;
+  border-color: #9b8de1;
+}
+
+.calendar-table a.btn:hover {
+  background-color: #9b8de1;
+  color: #fff;
+}
+
+/* Highlight buscador */
+.highlight {
+  color: #7c6fc9;
+  font-weight: 600;
+}
+
+/* Badge citas */
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+/* Alertas */
+.alert-info {
+  background-color: #e8e3ff;
+  border-color: #cfc6f8;
+  color: #2d1f4f;
+}
+
+.alert-warning {
+  background-color: #fff4e5;
+  color: #704a00;
+}
+
+/* Formularios */
+.form-label {
+  color: #2d1f4f;
+}
+
+.form-control,
+.form-select {
+  border-color: #cfc6f8;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #9b8de1;
+  box-shadow: 0 0 0 0.2rem rgba(155, 141, 225, 0.25);
+}
+
+/* Responsive ajustes */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  .navbar-brand {
+    font-size: 1.1rem;
+  }
+
+  .calendar-table td {
+    height: 50px;
+    padding: 2px;
+  }
+
+  .calendar-table a.btn {
+    font-size: 0.9rem;
+    padding: 6px 0;
+  }
+
+  table {
+    font-size: 0.9rem;
+  }
+}
+
+/* ====== MODO OSCURO MORADO ====== */
+body.dark-mode {
+  background-color: #2a2245;
+  color: #e8e4ff;
+}
+
+body.dark-mode .navbar {
+  background-color: #4a3a7c !important;
+}
+
+body.dark-mode .btn-primary {
+  background-color: #6d5cb8;
+  border-color: #6d5cb8;
+}
+
+body.dark-mode .btn-primary:hover {
+  background-color: #8b7de1;
+}
+
+body.dark-mode .btn-outline-secondary {
+  color: #bfb2ff;
+  border-color: #bfb2ff;
+}
+
+body.dark-mode .btn-outline-secondary:hover {
+  background-color: #6d5cb8;
+  color: #fff;
+}
+
+body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: #3a3164;
+  color: #f3f0ff;
+}
+
+body.dark-mode .calendar-table a.btn {
+  color: #f3f0ff;
+  border-color: #8b7de1;
+}
+
+body.dark-mode .calendar-table a.btn:hover {
+  background-color: #8b7de1;
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+  background-color: #3a3164;
+  border-color: #6d5cb8;
+  color: #f3f0ff;
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(139, 125, 225, 0.35);
+}
+
+body.dark-mode .alert-info {
+  background-color: #4a3a7c;
+  color: #e8e4ff;
+  border-color: #6d5cb8;
+}
+
+/* Ajustes para móviles */
+@media (max-width: 768px) {
+  .calendar-table td a.btn {
+    font-size: 0.9rem;
+    min-height: 60px;
+    padding: 8px 0;
+    border-radius: 8px;
+  }
+
+  .calendar-table td {
+    padding: 2px !important;
+  }
+
+  .calendar-table .badge {
+    font-size: 0.7rem;
+  }
+
+  .btn-outline-secondary {
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+
+  h4 {
+    font-size: 1.1rem;
+  }
+}
+

@@ -1,0 +1,58 @@
+<%- include('partials/header') %>
+
+<h3 class="mb-3">Catálogo de lugares</h3>
+
+<div class="row">
+  <div class="col-md-5">
+    <h5>Agregar lugar</h5>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <% if (success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <form action="/lugares" method="post" class="row g-2">
+      <div class="col-12">
+        <label class="form-label">Nombre del lugar</label>
+        <input type="text" name="nombre" class="form-control" required />
+      </div>
+      <div class="col-12 mt-2">
+        <button class="btn btn-primary" type="submit">Guardar lugar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-md-7 mt-4 mt-md-0">
+    <h5>Lugares registrados</h5>
+
+    <% if (!lugares || lugares.length === 0) { %>
+      <div class="alert alert-info">
+        No hay lugares registrados. Agregue uno con el formulario de la izquierda.
+      </div>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% lugares.forEach(l => { %>
+              <tr>
+                <td><%= l.id %></td>
+                <td><%= l.nombre %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,175 @@
+<%- include('partials/header') %>
+
+<h3 class="mb-3 text-center fw-bold">Citas del día <%= fecha %></h3>
+
+<div class="text-center mb-3">
+  <a href="/" class="btn btn-outline-primary rounded-pill px-4 py-2">
+    &laquo; Volver al calendario
+  </a>
+</div>
+
+<div class="row g-4">
+  <!-- ============================
+       FORMULARIO NUEVA CITA
+  ============================ -->
+  <div class="col-12 col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="mb-3 fw-semibold text-primary">Nueva cita</h5>
+
+        <form action="/citas" method="post" class="row g-2">
+          <input type="hidden" name="fecha" value="<%= fecha %>">
+
+          <div class="col-12">
+            <label class="form-label">Nombre</label>
+            <input type="text" name="nombre" class="form-control" required />
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Teléfono</label>
+            <input type="text" name="telefono" class="form-control" />
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Hora</label>
+            <select name="hora" class="form-select" required>
+              <option value="">Seleccione hora...</option>
+              <% horarios.forEach(h => { %>
+                <option value="<%= h %>"><%= h %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Lugar</label>
+            <% if (lugares && lugares.length > 0) { %>
+              <select name="lugar" class="form-select" required>
+                <% lugares.forEach(l => { %>
+                  <option value="<%= l.nombre %>"><%= l.nombre %></option>
+                <% }) %>
+              </select>
+            <% } else { %>
+              <div class="alert alert-warning small mt-1">
+                No hay lugares en el catálogo. Agregue lugares en el menú "Lugares".
+              </div>
+            <% } %>
+          </div>
+
+          <div class="col-12 mt-3">
+            <button class="btn btn-primary w-100 fw-semibold py-2 rounded-pill" type="submit">
+              Guardar cita
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================
+       LISTADO DE CITAS
+  ============================ -->
+  <div class="col-12 col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="mb-3 fw-semibold text-primary">Citas registradas</h5>
+
+        <% if (!citas || citas.length === 0) { %>
+          <div class="alert alert-info text-center py-3">
+            No hay citas registradas para este día.
+          </div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr class="text-center">
+                  <th>Hora</th>
+                  <th>Nombre</th>
+                  <th>Teléfono</th>
+                  <th>Lugar</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% citas.forEach(c => { %>
+                  <tr>
+                    <td class="fw-bold"><%= c.hora %></td>
+                    <td><%= c.nombre %></td>
+                    <td><%= c.telefono %></td>
+                    <td><%= c.lugar %></td>
+                    <td class="text-center">
+                      <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
+                        <button class="btn btn-sm btn-outline-secondary px-3"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#edit-<%= c.id %>">
+                          ✏️ Editar
+                        </button>
+
+                        <form action="/citas/<%= c.id %>/eliminar" method="post"
+                              onsubmit="return confirm('¿Eliminar cita?');" class="m-0">
+                          <input type="hidden" name="fecha" value="<%= fecha %>">
+                          <button class="btn btn-sm btn-outline-danger px-3" type="submit">
+                            🗑️ Eliminar
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Formulario de edición -->
+                  <tr class="collapse" id="edit-<%= c.id %>">
+                    <td colspan="5">
+                      <form action="/citas/<%= c.id %>/editar" method="post" class="row g-2">
+                        <input type="hidden" name="fecha" value="<%= fecha %>">
+
+                        <div class="col-12 col-md-6">
+                          <label class="form-label">Nombre</label>
+                          <input type="text" name="nombre" class="form-control" value="<%= c.nombre %>" required />
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                          <label class="form-label">Teléfono</label>
+                          <input type="text" name="telefono" class="form-control" value="<%= c.telefono %>" />
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                          <label class="form-label">Hora</label>
+                          <select name="hora" class="form-select" required>
+                            <% horarios.forEach(h => { %>
+                              <option value="<%= h %>" <%= h === c.hora ? 'selected' : '' %>><%= h %></option>
+                            <% }) %>
+                          </select>
+                        </div>
+
+                        <div class="col-12">
+                          <label class="form-label">Lugar</label>
+                          <% if (lugares && lugares.length > 0) { %>
+                            <select name="lugar" class="form-select" required>
+                              <% lugares.forEach(l => { %>
+                                <option value="<%= l.nombre %>" <%= l.nombre === c.lugar ? 'selected' : '' %>><%= l.nombre %></option>
+                              <% }) %>
+                            </select>
+                          <% } else { %>
+                            <input type="text" name="lugar" class="form-control" value="<%= c.lugar %>" />
+                          <% } %>
+                        </div>
+
+                        <div class="col-12 mt-3">
+                          <button class="btn btn-success w-100 fw-semibold rounded-pill py-2" type="submit">
+                            💾 Guardar cambios
+                          </button>
+                        </div>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

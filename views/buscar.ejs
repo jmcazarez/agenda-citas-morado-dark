@@ -1,0 +1,65 @@
+<%- include('partials/header') %>
+
+<%
+  function highlight(text, term) {
+    if (!term || !text) return text;
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp('(' + escaped + ')', 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+  }
+%>
+
+<h3 class="mb-3">Buscar citas</h3>
+
+<form action="/buscar" method="get" class="row mb-4">
+  <div class="col-md-8">
+    <input
+      type="text"
+      name="q"
+      value="<%= termino %>"
+      class="form-control"
+      placeholder="Buscar por nombre o teléfono..."
+      autofocus
+    />
+  </div>
+  <div class="col-md-4 mt-2 mt-md-0">
+    <button class="btn btn-primary w-100" type="submit">Buscar</button>
+  </div>
+</form>
+
+<% if (termino && citas.length === 0) { %>
+  <div class="alert alert-warning">No se encontraron citas para "<%= termino %>".</div>
+<% } %>
+
+<% if (citas.length > 0) { %>
+  <div class="table-responsive">
+    <table class="table table-striped table-sm">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Nombre</th>
+          <th>Teléfono</th>
+          <th>Lugar</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% citas.forEach(c => { %>
+          <tr>
+            <td><%= c.fecha %></td>
+            <td><%= c.hora %></td>
+            <td><%- highlight(c.nombre, termino) %></td>
+            <td><%- highlight(c.telefono, termino) %></td>
+            <td><%= c.lugar %></td>
+            <td>
+              <a href="/citas?fecha=<%= c.fecha %>" class="btn btn-sm btn-outline-primary">Ver día</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

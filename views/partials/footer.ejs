@@ -1,0 +1,30 @@
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  (function() {
+    const body = document.body;
+    const toggle = document.getElementById('themeToggle');
+    const storedTheme = localStorage.getItem('theme');
+
+    if (storedTheme === 'dark') {
+      body.classList.add('dark-mode');
+      if (toggle) toggle.checked = True;
+    }
+
+    if (toggle) {
+      toggle.addEventListener('change', function() {
+        if (toggle.checked) {
+          body.classList.add('dark-mode');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          body.classList.remove('dark-mode');
+          localStorage.setItem('theme', 'light');
+        }
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>
