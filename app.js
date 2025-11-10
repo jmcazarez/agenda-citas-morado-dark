@@ -1,10 +1,13 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
-const db = require('./db');
+const sqlite3 = require('sqlite3').verbose();
+
+const dbPath = process.env.SQLITE_PATH || './citas.db';
+const db = new sqlite3.Database(dbPath);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // --- Middlewares base ---
 app.use(express.urlencoded({ extended: true }));
