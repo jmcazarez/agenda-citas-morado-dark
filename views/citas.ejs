@@ -9,27 +9,20 @@
 </div>
 
 <div class="row g-4">
-  <!-- ============================
-       FORMULARIO NUEVA CITA
-  ============================ -->
   <div class="col-12 col-md-6">
     <div class="card shadow-sm border-0">
       <div class="card-body">
         <h5 class="mb-3 fw-semibold text-primary">Nueva cita</h5>
-
         <form action="/citas" method="post" class="row g-2">
           <input type="hidden" name="fecha" value="<%= fecha %>">
-
           <div class="col-12">
             <label class="form-label">Nombre</label>
             <input type="text" name="nombre" class="form-control" required />
           </div>
-
           <div class="col-12 col-md-6">
             <label class="form-label">Teléfono</label>
             <input type="text" name="telefono" class="form-control" />
           </div>
-
           <div class="col-12 col-md-6">
             <label class="form-label">Hora</label>
             <select name="hora" class="form-select" required>
@@ -39,7 +32,6 @@
               <% }) %>
             </select>
           </div>
-
           <div class="col-12">
             <label class="form-label">Lugar</label>
             <% if (lugares && lugares.length > 0) { %>
@@ -50,11 +42,10 @@
               </select>
             <% } else { %>
               <div class="alert alert-warning small mt-1">
-                No hay lugares en el catálogo. Agregue lugares en el menú "Lugares".
+                No hay lugares en el catálogo.
               </div>
             <% } %>
           </div>
-
           <div class="col-12 mt-3">
             <button class="btn btn-primary w-100 fw-semibold py-2 rounded-pill" type="submit">
               Guardar cita
@@ -65,14 +56,10 @@
     </div>
   </div>
 
-  <!-- ============================
-       LISTADO DE CITAS
-  ============================ -->
   <div class="col-12 col-md-6">
     <div class="card shadow-sm border-0">
       <div class="card-body">
         <h5 class="mb-3 fw-semibold text-primary">Citas registradas</h5>
-
         <% if (!citas || citas.length === 0) { %>
           <div class="alert alert-info text-center py-3">
             No hay citas registradas para este día.
@@ -92,7 +79,7 @@
               <tbody>
                 <% citas.forEach(c => { %>
                   <tr>
-                    <td class="fw-bold"><%= c.hora %></td>
+                    <td class="fw-bold"><%= (typeof c.hora === 'string') ? c.hora.slice(0,5) : new Date(c.hora).toTimeString().slice(0,5) %></td>
                     <td><%= c.nombre %></td>
                     <td><%= c.telefono %></td>
                     <td><%= c.lugar %></td>
@@ -104,9 +91,7 @@
                                 data-bs-target="#edit-<%= c.id %>">
                           ✏️ Editar
                         </button>
-
-                        <form action="/citas/<%= c.id %>/eliminar" method="post"
-                              onsubmit="return confirm('¿Eliminar cita?');" class="m-0">
+                        <form action="/citas/<%= c.id %>/eliminar" method="post" onsubmit="return confirm('¿Eliminar cita?');" class="m-0">
                           <input type="hidden" name="fecha" value="<%= fecha %>">
                           <button class="btn btn-sm btn-outline-danger px-3" type="submit">
                             🗑️ Eliminar
@@ -116,30 +101,30 @@
                     </td>
                   </tr>
 
-                  <!-- Formulario de edición -->
                   <tr class="collapse" id="edit-<%= c.id %>">
                     <td colspan="5">
                       <form action="/citas/<%= c.id %>/editar" method="post" class="row g-2">
-                        <!-- Nota: ahora fecha es editable -->
                         <div class="col-12 col-md-6">
                           <label class="form-label">Nombre</label>
                           <input type="text" name="nombre" class="form-control" value="<%= c.nombre %>" required />
                         </div>
-
                         <div class="col-12 col-md-3">
                           <label class="form-label">Teléfono</label>
                           <input type="text" name="telefono" class="form-control" value="<%= c.telefono %>" />
                         </div>
-
                         <div class="col-12 col-md-3">
                           <label class="form-label">Hora</label>
                           <select name="hora" class="form-select" required>
+                            <% 
+                              const horaActual = (typeof c.hora === 'string')
+                                ? c.hora.slice(0,5)
+                                : new Date(c.hora).toTimeString().slice(0,5);
+                            %>
                             <% horarios.forEach(h => { %>
-                              <option value="<%= h %>" <%= h === c.hora ? 'selected' : '' %>><%= h %></option>
+                              <option value="<%= h %>" <%= h === horaActual ? 'selected' : '' %>><%= h %></option>
                             <% }) %>
                           </select>
                         </div>
-
                         <div class="col-12 col-md-6">
                           <label class="form-label">Lugar</label>
                           <% if (lugares && lugares.length > 0) { %>
@@ -152,15 +137,12 @@
                             <input type="text" name="lugar" class="form-control" value="<%= c.lugar %>" />
                           <% } %>
                         </div>
-
                         <div class="col-12 col-md-6">
                           <label class="form-label">Fecha</label>
-                          <% /* c.fecha puede venir como Date o como string desde MySQL; normalizamos */ %>
                           <input type="date" name="fecha" class="form-control"
                                  value="<%= (c.fecha && c.fecha.toISOString) ? c.fecha.toISOString().slice(0,10) : new Date(c.fecha).toISOString().slice(0,10) %>"
                                  required />
                         </div>
-
                         <div class="col-12 mt-3">
                           <button class="btn btn-success w-100 fw-semibold rounded-pill py-2" type="submit">
                             💾 Guardar cambios
