@@ -1,13 +1,21 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
-const sqlite3 = require('sqlite3').verbose();
-
-const dbPath = process.env.SQLITE_PATH || './citas.db';
-const db = new sqlite3.Database(dbPath);
+const mysql = require('mysql2');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// --- Configuración MySQL ---
+const db = mysql.createPool({
+  host: process.env.DB_HOST || 'MYSQL8001.site4now.net',
+  user: process.env.DB_USER || '9b8a8d_citas',
+  password: process.env.DB_PASS || 'Citas2025.',
+  database: process.env.DB_NAME || 'db_9b8a8d_citas',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
 
 // --- Middlewares base ---
 app.use(express.urlencoded({ extended: true }));
@@ -42,18 +50,12 @@ function generarCalendario(year, month) {
   const weeks = [];
   let currentWeek = [];
 
-  for (let i = 0; i < firstWeekDay; i++) {
-    currentWeek.push(null);
-  }
+  for (let i = 0; i < firstWeekDay; i++) currentWeek.push(null);
 
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month - 1, day);
     const isoDate = date.toISOString().slice(0, 10);
-
-    currentWeek.push({
-      day,
-      isoDate
-    });
+    currentWeek.push({ day, isoDate });
 
     if (currentWeek.length === 7) {
       weeks.push(currentWeek);
@@ -62,9 +64,7 @@ function generarCalendario(year, month) {
   }
 
   if (currentWeek.length > 0) {
-    while (currentWeek.length < 7) {
-      currentWeek.push(null);
-    }
+    while (currentWeek.length < 7) currentWeek.push(null);
     weeks.push(currentWeek);
   }
 
@@ -84,46 +84,36 @@ function generarHorarios() {
 
 // --- Middleware de protección ---
 function requireAuth(req, res, next) {
-  if (!req.session.user) {
-    return res.redirect('/login');
-  }
+  if (!req.session.user) return res.redirect('/login');
   next();
 }
 
 // --- Rutas de autenticación ---
-
 app.get('/login', (req, res) => {
-  if (req.session.user) {
-    return res.redirect('/');
-  }
+  if (req.session.user) return res.redirect('/');
   res.render('login', { error: null });
 });
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  db.get(
+  db.query(
     'SELECT * FROM usuarios WHERE username = ? AND password = ?',
     [username, password],
-    (err, row) => {
-      if (err) {
-        console.error(err);
-        return res.render('login', { error: 'Error al intentar iniciar sesión.' });
-      }
-      if (!row) {
+    (err, results) => {
+      if (err) return res.render('login', { error: 'Error al intentar iniciar sesión.' });
+      if (results.length === 0) {
         return res.render('login', { error: 'Usuario o contraseña incorrectos.' });
       }
 
-      req.session.user = { id: row.id, username: row.username };
+      req.session.user = { id: results[0].id, username: results[0].username };
       res.redirect('/');
     }
   );
 });
 
 app.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/login');
-  });
+  req.session.destroy(() => res.redirect('/login'));
 });
 
 app.get('/cambiar-pass', requireAuth, (req, res) => {
@@ -134,27 +124,23 @@ app.post('/cambiar-pass', requireAuth, (req, res) => {
   const { actual, nueva } = req.body;
   const username = req.session.user.username;
 
-  db.get(
+  db.query(
     'SELECT * FROM usuarios WHERE username = ? AND password = ?',
     [username, actual],
-    (err, row) => {
-      if (err) {
-        console.error(err);
-        return res.render('cambiar-pass', { error: 'Error al validar contraseña actual.', success: null });
-      }
-      if (!row) {
-        return res.render('cambiar-pass', { error: 'La contraseña actual no es correcta.', success: null });
+    (err, results) => {
+      if (err) return res.render('cambiar-pass', { error: 'Error al validar contraseña actual.' });
+      if (results.length === 0) {
+        return res.render('cambiar-pass', { error: 'La contraseña actual no es correcta.' });
       }
 
-      db.run(
+      db.query(
         'UPDATE usuarios SET password = ? WHERE username = ?',
         [nueva, username],
         (err2) => {
           if (err2) {
-            console.error(err2);
-            return res.render('cambiar-pass', { error: 'Error al actualizar contraseña.', success: null });
+            return res.render('cambiar-pass', { error: 'Error al actualizar contraseña.' });
           }
-          res.render('cambiar-pass', { error: null, success: 'Contraseña actualizada correctamente.' });
+          res.render('cambiar-pass', { success: 'Contraseña actualizada correctamente.' });
         }
       );
     }
@@ -162,68 +148,41 @@ app.post('/cambiar-pass', requireAuth, (req, res) => {
 });
 
 // --- Catálogo de lugares ---
-// Ver y agregar lugares
 app.get('/lugares', requireAuth, (req, res) => {
-  db.all('SELECT * FROM lugares ORDER BY nombre', (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.send('Error consultando lugares');
-    }
-    res.render('lugares', { lugares: rows, error: null, success: null });
+  db.query('SELECT * FROM lugares ORDER BY nombre', (err, results) => {
+    if (err) return res.send('Error consultando lugares');
+    res.render('lugares', { lugares: results, error: null, success: null });
   });
 });
 
 app.post('/lugares', requireAuth, (req, res) => {
   const nombre = (req.body.nombre || '').trim();
-
   if (!nombre) {
-    return db.all('SELECT * FROM lugares ORDER BY nombre', (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.send('Error consultando lugares');
-      }
-      res.render('lugares', { lugares: rows, error: 'El nombre del lugar es obligatorio.', success: null });
+    return db.query('SELECT * FROM lugares ORDER BY nombre', (err, rows) => {
+      res.render('lugares', { lugares: rows, error: 'El nombre del lugar es obligatorio.' });
     });
   }
 
-  db.run(
-    'INSERT INTO lugares (nombre) VALUES (?)',
-    [nombre],
-    (err) => {
-      if (err) {
-        console.error(err);
-        const msg = err.message && err.message.includes('UNIQUE')
-          ? 'El lugar ya existe en el catálogo.'
-          : 'Error guardando el lugar.';
-        return db.all('SELECT * FROM lugares ORDER BY nombre', (err2, rows) => {
-          if (err2) {
-            console.error(err2);
-            return res.send('Error consultando lugares');
-          }
-          res.render('lugares', { lugares: rows, error: msg, success: null });
-        });
-      }
-
-      db.all('SELECT * FROM lugares ORDER BY nombre', (err2, rows) => {
-        if (err2) {
-          console.error(err2);
-          return res.send('Error consultando lugares');
-        }
-        res.render('lugares', { lugares: rows, error: null, success: 'Lugar agregado correctamente.' });
+  db.query('INSERT INTO lugares (nombre) VALUES (?)', [nombre], (err) => {
+    if (err) {
+      const msg = err.code === 'ER_DUP_ENTRY'
+        ? 'El lugar ya existe en el catálogo.'
+        : 'Error guardando el lugar.';
+      return db.query('SELECT * FROM lugares ORDER BY nombre', (err2, rows) => {
+        res.render('lugares', { lugares: rows, error: msg });
       });
     }
-  );
+    db.query('SELECT * FROM lugares ORDER BY nombre', (err2, rows) => {
+      res.render('lugares', { lugares: rows, success: 'Lugar agregado correctamente.' });
+    });
+  });
 });
 
-// --- Rutas protegidas ---
-
-// Calendario principal con conteo de citas por día
+// --- Calendario principal ---
 app.get('/', requireAuth, (req, res) => {
   const now = new Date();
-
   const year = parseInt(req.query.year) || now.getFullYear();
   const month = parseInt(req.query.month) || now.getMonth() + 1;
-
   const weeks = generarCalendario(year, month);
 
   const monthStr = String(month).padStart(2, '0');
@@ -231,30 +190,24 @@ app.get('/', requireAuth, (req, res) => {
   const lastDay = new Date(year, month, 0).getDate();
   const lastDateStr = `${year}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
 
-  db.all(
+  db.query(
     'SELECT fecha, COUNT(*) as total FROM citas WHERE fecha BETWEEN ? AND ? GROUP BY fecha',
     [firstDateStr, lastDateStr],
     (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.send('Error consultando conteo de citas');
-      }
+      if (err) return res.send('Error consultando conteo de citas');
 
       const citaCounts = {};
       rows.forEach(r => {
-        citaCounts[r.fecha] = r.total;
+        const fechaISO = new Date(r.fecha).toISOString().slice(0, 10);
+        citaCounts[fechaISO] = r.total;
       });
 
-      res.render('calendar', {
-        year,
-        month,
-        weeks,
-        citaCounts
-      });
+      res.render('calendar', { year, month, weeks, citaCounts });
     }
   );
 });
 
+// --- Página de mes ---
 app.get('/mes', requireAuth, (req, res) => {
   let { year, month } = req.query;
   year = parseInt(year);
@@ -273,177 +226,104 @@ app.get('/mes', requireAuth, (req, res) => {
   const lastDay = new Date(year, month, 0).getDate();
   const lastDateStr = `${year}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
 
-  db.all(
+  db.query(
     'SELECT fecha, COUNT(*) as total FROM citas WHERE fecha BETWEEN ? AND ? GROUP BY fecha',
     [firstDateStr, lastDateStr],
     (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.send('Error consultando conteo de citas');
-      }
+      if (err) return res.send('Error consultando conteo de citas');
 
       const citaCounts = {};
       rows.forEach(r => {
-        citaCounts[r.fecha] = r.total;
+        const fechaISO = new Date(r.fecha).toISOString().slice(0, 10);
+        citaCounts[fechaISO] = r.total;
       });
 
-      res.render('calendar', {
-        year,
-        month,
-        weeks,
-        citaCounts
-      });
+      res.render('calendar', { year, month, weeks, citaCounts });
     }
   );
 });
 
-// Citas por fecha
+// --- Citas por fecha ---
 app.get('/citas', requireAuth, (req, res) => {
   const fecha = req.query.fecha;
+  if (!fecha) return res.redirect('/');
 
-  if (!fecha) {
-    return res.redirect('/');
-  }
-
-  db.all(
-    'SELECT * FROM citas WHERE fecha = ? ORDER BY hora',
-    [fecha],
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.send('Error consultando citas');
-      }
-      db.all('SELECT * FROM lugares ORDER BY nombre', (err2, lugares) => {
-        if (err2) {
-          console.error(err2);
-          return res.send('Error consultando lugares');
-        }
-        res.render('citas', {
-          fecha,
-          citas: rows,
-          horarios: generarHorarios(),
-          lugares
-        });
-      });
-    }
-  );
+  db.query('SELECT * FROM citas WHERE fecha = ? ORDER BY hora', [fecha], (err, citas) => {
+    if (err) return res.send('Error consultando citas');
+    db.query('SELECT * FROM lugares ORDER BY nombre', (err2, lugares) => {
+      res.render('citas', { fecha, citas, horarios: generarHorarios(), lugares });
+    });
+  });
 });
 
-// Crear cita con validación de duplicados
+// --- Crear cita ---
 app.post('/citas', requireAuth, (req, res) => {
   const { nombre, telefono, lugar, fecha, hora } = req.body;
 
-  db.get(
-    'SELECT id FROM citas WHERE fecha = ? AND hora = ?',
-    [fecha, hora],
-    (err, row) => {
-      if (err) {
-        console.error(err);
-        return res.send('Error verificando citas existentes');
-      }
-
-      if (row) {
-        return res.send(`
-          <h3>Ya existe una cita registrada el ${fecha} a las ${hora}.</h3>
-          <a href="/citas?fecha=${fecha}">Volver</a>
-        `);
-      }
-
-      db.run(
-        `INSERT INTO citas (nombre, telefono, lugar, fecha, hora)
-         VALUES (?, ?, ?, ?, ?)`,
-        [nombre, telefono, lugar, fecha, hora],
-        (err2) => {
-          if (err2) {
-            console.error(err2);
-            return res.send('Error guardando cita');
-          }
-          res.redirect('/citas?fecha=' + fecha);
-        }
-      );
+  db.query('SELECT id FROM citas WHERE fecha = ? AND hora = ?', [fecha, hora], (err, rows) => {
+    if (err) return res.send('Error verificando citas');
+    if (rows.length > 0) {
+      return res.send(`<h3>Ya existe una cita registrada el ${fecha} a las ${hora}.</h3><a href="/citas?fecha=${fecha}">Volver</a>`);
     }
-  );
+
+    db.query(
+      'INSERT INTO citas (nombre, telefono, lugar, fecha, hora) VALUES (?, ?, ?, ?, ?)',
+      [nombre, telefono, lugar, fecha, hora],
+      (err2) => {
+        if (err2) return res.send('Error guardando cita');
+        res.redirect('/citas?fecha=' + fecha);
+      }
+    );
+  });
 });
 
-// Editar cita con validación de duplicados
+// --- Editar cita ---
 app.post('/citas/:id/editar', requireAuth, (req, res) => {
   const id = req.params.id;
   const { nombre, telefono, lugar, fecha, hora } = req.body;
 
-  db.get(
-    'SELECT id FROM citas WHERE fecha = ? AND hora = ? AND id != ?',
-    [fecha, hora, id],
-    (err, row) => {
-      if (err) {
-        console.error(err);
-        return res.send('Error verificando duplicados');
-      }
-
-      if (row) {
-        return res.send(`
-          <h3>Ya existe otra cita registrada el ${fecha} a las ${hora}.</h3>
-          <a href="/citas?fecha=${fecha}">Volver</a>
-        `);
-      }
-
-      db.run(
-        `UPDATE citas
-         SET nombre = ?, telefono = ?, lugar = ?, fecha = ?, hora = ?
-         WHERE id = ?`,
-        [nombre, telefono, lugar, fecha, hora, id],
-        (err2) => {
-          if (err2) {
-            console.error(err2);
-            return res.send('Error actualizando cita');
-          }
-          res.redirect('/citas?fecha=' + fecha);
-        }
-      );
+  db.query('SELECT id FROM citas WHERE fecha = ? AND hora = ? AND id != ?', [fecha, hora, id], (err, rows) => {
+    if (err) return res.send('Error verificando duplicados');
+    if (rows.length > 0) {
+      return res.send(`<h3>Ya existe otra cita registrada el ${fecha} a las ${hora}.</h3><a href="/citas?fecha=${fecha}">Volver</a>`);
     }
-  );
+
+    db.query(
+      'UPDATE citas SET nombre=?, telefono=?, lugar=?, fecha=?, hora=? WHERE id=?',
+      [nombre, telefono, lugar, fecha, hora, id],
+      (err2) => {
+        if (err2) return res.send('Error actualizando cita');
+        res.redirect('/citas?fecha=' + fecha);
+      }
+    );
+  });
 });
 
-// Buscar citas
+// --- Eliminar cita ---
+app.post('/citas/:id/eliminar', requireAuth, (req, res) => {
+  const id = req.params.id;
+  const { fecha } = req.body;
+
+  db.query('DELETE FROM citas WHERE id = ?', [id], (err) => {
+    if (err) return res.send('Error eliminando cita');
+    res.redirect('/citas?fecha=' + fecha);
+  });
+});
+
+// --- Buscar citas ---
 app.get('/buscar', requireAuth, (req, res) => {
   const termino = (req.query.q || '').trim();
-
-  if (!termino) {
-    return res.render('buscar', { citas: [], termino: '' });
-  }
+  if (!termino) return res.render('buscar', { citas: [], termino: '' });
 
   const likeTerm = `%${termino}%`;
-
-  db.all(
-    `SELECT * FROM citas 
-     WHERE nombre LIKE ? OR telefono LIKE ?
-     ORDER BY fecha, hora`,
+  db.query(
+    'SELECT * FROM citas WHERE nombre LIKE ? OR telefono LIKE ? ORDER BY fecha, hora',
     [likeTerm, likeTerm],
     (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.send('Error al buscar citas');
-      }
+      if (err) return res.send('Error al buscar citas');
       res.render('buscar', { citas: rows, termino });
     }
   );
 });
 
-// Eliminar cita
-app.post('/citas/:id/eliminar', requireAuth, (req, res) => {
-  const id = req.params.id;
-  const { fecha } = req.body;
-
-  db.run('DELETE FROM citas WHERE id = ?', [id], (err) => {
-    if (err) {
-      console.error(err);
-      return res.send('Error eliminando cita');
-    }
-
-    res.redirect('/citas?fecha=' + fecha);
-  });
-});
-
-
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor escuchando en http://localhost:${PORT}`));
