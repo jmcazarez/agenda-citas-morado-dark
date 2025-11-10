@@ -120,8 +120,7 @@
                   <tr class="collapse" id="edit-<%= c.id %>">
                     <td colspan="5">
                       <form action="/citas/<%= c.id %>/editar" method="post" class="row g-2">
-                        <input type="hidden" name="fecha" value="<%= fecha %>">
-
+                        <!-- Nota: ahora fecha es editable -->
                         <div class="col-12 col-md-6">
                           <label class="form-label">Nombre</label>
                           <input type="text" name="nombre" class="form-control" value="<%= c.nombre %>" required />
@@ -141,7 +140,7 @@
                           </select>
                         </div>
 
-                        <div class="col-12">
+                        <div class="col-12 col-md-6">
                           <label class="form-label">Lugar</label>
                           <% if (lugares && lugares.length > 0) { %>
                             <select name="lugar" class="form-select" required>
@@ -152,6 +151,14 @@
                           <% } else { %>
                             <input type="text" name="lugar" class="form-control" value="<%= c.lugar %>" />
                           <% } %>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                          <label class="form-label">Fecha</label>
+                          <% /* c.fecha puede venir como Date o como string desde MySQL; normalizamos */ %>
+                          <input type="date" name="fecha" class="form-control"
+                                 value="<%= (c.fecha && c.fecha.toISOString) ? c.fecha.toISOString().slice(0,10) : new Date(c.fecha).toISOString().slice(0,10) %>"
+                                 required />
                         </div>
 
                         <div class="col-12 mt-3">
