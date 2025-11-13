@@ -7,32 +7,31 @@
     'Enero','Febrero','Marzo','Abril','Mayo','Junio',
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
   ];
+
+  const hoy = new Date();
+  const hoyISO = hoy.toISOString().slice(0, 10);
 %>
 
-<!-- Encabezado: título y botones -->
+<!-- Encabezado -->
 <div class="text-center mb-3">
-  
   <h4 class="fw-bold text-uppercase mb-1" style="letter-spacing:0.5px;">
-  <%= nombresMes[month - 1] %> <%= year %>
-</h4>
+    <%= nombresMes[month - 1] %> <%= year %>
+  </h4>
 
-<% 
-  let totalMes = 0;
-  if (typeof citaCounts !== 'undefined') {
-    for (const fecha in citaCounts) {
-      totalMes += citaCounts[fecha];
+  <% 
+    let totalMes = 0;
+    if (typeof citaCounts !== 'undefined') {
+      for (const fecha in citaCounts) totalMes += citaCounts[fecha];
     }
-  }
-%>
+  %>
 
-<p class="text-muted fw-semibold mb-3">
-  📅 Total de citas en el mes: 
-  <span class="text-primary"><%= totalMes %></span>
-</p>
+  <p class="text-muted fw-semibold mb-3">
+    📅 Total de citas en el mes: 
+    <span class="text-primary"><%= totalMes %></span>
+  </p>
 
-  <div class="d-flex justify-content-between align-items-center flex-nowrap gap-2">
-    <!-- Mes anterior -->
-    <form method="get" action="/mes" class="flex-fill text-start">
+  <div class="d-flex justify-content-between align-items-center flex-nowrap gap-2 flex-column flex-sm-row">
+    <form method="get" action="/mes" class="w-100 w-sm-auto mb-2 mb-sm-0">
       <input type="hidden" name="year" value="<%= month === 1 ? year - 1 : year %>">
       <input type="hidden" name="month" value="<%= month === 1 ? 12 : month - 1 %>">
       <button class="btn btn-outline-secondary px-3 py-2 fw-semibold rounded-pill w-100" type="submit">
@@ -40,8 +39,7 @@
       </button>
     </form>
 
-    <!-- Mes siguiente -->
-    <form method="get" action="/mes" class="flex-fill text-end">
+    <form method="get" action="/mes" class="w-100 w-sm-auto">
       <input type="hidden" name="year" value="<%= month === 12 ? year + 1 : year %>">
       <input type="hidden" name="month" value="<%= month === 12 ? 1 : month + 1 %>">
       <button class="btn btn-outline-secondary px-3 py-2 fw-semibold rounded-pill w-100" type="submit">
@@ -52,45 +50,139 @@
 </div>
 
 <!-- Calendario -->
-<div class="table-responsive">
-  <table class="table table-bordered text-center align-middle calendar-table">
-    <thead class="table-light">
-      <tr>
-        <th>Dom</th>
-        <th>Lun</th>
-        <th>Mar</th>
-        <th>Mié</th>
-        <th>Jue</th>
-        <th>Vie</th>
-        <th>Sáb</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% weeks.forEach(week => { %>
-        <tr>
-          <% week.forEach(day => { %>
-            <% if (!day) { %>
-              <!-- Celda vacía: se deja visible para no desalinear columnas -->
-              <td class="bg-light">&nbsp;</td>
+<div class="calendar-grid container-fluid p-0">
+  <div class="row g-2 g-md-3 text-center fw-semibold d-none d-sm-flex">
+    <div class="col">Dom</div>
+    <div class="col">Lun</div>
+    <div class="col">Mar</div>
+    <div class="col">Mié</div>
+    <div class="col">Jue</div>
+    <div class="col">Vie</div>
+    <div class="col">Sáb</div>
+  </div>
+
+  <% weeks.forEach(week => { %>
+    <div class="row week-row">
+      <% week.forEach((day, iDia) => { %>
+        <% if (!day) { %>
+          <div class="col bg-light border rounded py-3">&nbsp;</div>
+        <% } else { 
+             const esHoy = day.isoDate === hoyISO;
+             const fechaActual = new Date(day.isoDate);
+             const esPasado = fechaActual < hoy && !esHoy;
+             const esFuturo = fechaActual > hoy && !esHoy;
+             const esDomingo = iDia === 0; // ✅ solo domingo como fin de semana
+             const tieneCitas = typeof citaCounts !== 'undefined' && citaCounts[day.isoDate] > 0;
+             const numCitas = tieneCitas ? citaCounts[day.isoDate] : 0;
+
+             let bgColor = "#fff";
+             let textColor = "#212529";
+             let borderColor = "#dee2e6";
+             let badgeHTML = "";
+
+             // Día actual
+             if (esHoy) {
+               bgColor = "#fff3cd"; // amarillo suave
+               borderColor = "#ffecb5";
+               if (tieneCitas) {
+                 badgeHTML = `<span class='badge bg-danger small mt-1' data-bs-toggle='tooltip' 
+                   title='${numCitas} cita${numCitas > 1 ? "s" : ""} registradas'>${numCitas}</span>`;
+               }
+             }
+             // Pasado
+             else if (esPasado) {
+               bgColor = "#dee2e6"; // gris medio
+               textColor = "#495057";
+               if (tieneCitas) {
+                 badgeHTML = `<span class='badge bg-danger small mt-1' data-bs-toggle='tooltip' 
+                   title='${numCitas} cita${numCitas > 1 ? "s" : ""} registradas'>${numCitas}</span>`;
+               }
+             }
+             // Futuro con citas
+             else if (esFuturo && tieneCitas) {
+               bgColor = "#ffffff";
+               badgeHTML = `<span class='badge bg-danger small mt-1' data-bs-toggle='tooltip' 
+                 title='${numCitas} cita${numCitas > 1 ? "s" : ""} registradas'>${numCitas}</span>`;
+             }
+             // Futuro sin citas
+             else if (esFuturo && !tieneCitas) {
+               bgColor = "#e9f7ef"; // verde pastel
+               textColor = "#2d6a4f";
+             }
+
+             // Solo domingo como fondo especial
+             if (esDomingo) {
+               bgColor = "#f8f9fa";
+             }
+        %>
+          <div class="col border rounded p-2 d-flex flex-column align-items-center justify-content-center day-cell"
+               style="min-height:70px; background-color:<%= bgColor %>; color:<%= textColor %>; border-color:<%= borderColor %>;">
+            <% if (!esPasado) { %>
+              <a href="/citas?fecha=<%= day.isoDate %>"
+                 class="text-decoration-none text-reset w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                <div class="fw-semibold"><%= day.day %></div>
+                <%- badgeHTML %>
+              </a>
             <% } else { %>
-              <td class="p-1 p-md-2">
-                <a href="/citas?fecha=<%= day.isoDate %>"
-                   class="btn btn-outline-primary w-100 py-2 py-md-3 rounded-3 d-flex flex-column align-items-center justify-content-center shadow-sm"
-                   style="min-height:70px; font-weight:500;">
-                  <span class="fs-6"><%= day.day %></span>
-                  <% if (typeof citaCounts !== 'undefined' && citaCounts[day.isoDate] > 0) { %>
-                    <span class="badge bg-danger mt-1 px-2 py-1">
-                      <%= citaCounts[day.isoDate] %> cita<%= citaCounts[day.isoDate] > 1 ? 's' : '' %>
-                    </span>
-                  <% } %>
-                </a>
-              </td>
+              <div class="fw-semibold"><%= day.day %></div>
+              <%- badgeHTML %>
             <% } %>
-          <% }) %>
-        </tr>
+          </div>
+        <% } %>
       <% }) %>
-    </tbody>
-  </table>
+    </div>
+  <% }) %>
 </div>
+
+<!-- Inicializar tooltips -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+  });
+</script>
+
+<style>
+  /* 📱 Móvil - cuadrícula alineada */
+  @media (max-width: 576px) {
+    .calendar-grid .week-row {
+      gap: 0 !important;
+      margin-bottom: 0;
+    }
+    .calendar-grid .col {
+      flex: 0 0 calc(100% / 7);
+      max-width: calc(100% / 7);
+      padding: 2px;
+    }
+    .calendar-grid .day-cell {
+      border-radius: 4px;
+    }
+    .calendar-grid .col div,
+    .calendar-grid .col a {
+      font-size: 0.8rem;
+    }
+    .calendar-grid .badge {
+      font-size: 0.7rem;
+      padding: 2px 5px;
+      border-radius: 10px;
+    }
+  }
+
+  /* 💻 Escritorio - separación ligera */
+  @media (min-width: 768px) {
+    .calendar-grid .week-row {
+      gap: 0.4rem !important;
+      margin-bottom: 0.4rem;
+    }
+    .calendar-grid .day-cell {
+      border-radius: 10px;
+      transition: transform 0.15s ease-in-out;
+    }
+    .calendar-grid .day-cell:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+  }
+</style>
 
 <%- include('partials/footer') %>
