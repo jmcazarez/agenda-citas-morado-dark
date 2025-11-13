@@ -71,7 +71,7 @@
              const fechaActual = new Date(day.isoDate);
              const esPasado = fechaActual < hoy && !esHoy;
              const esFuturo = fechaActual > hoy && !esHoy;
-             const esDomingo = iDia === 0; // ✅ solo domingo como fin de semana
+             const esDomingo = iDia === 0; // solo domingo como fin de semana
              const tieneCitas = typeof citaCounts !== 'undefined' && citaCounts[day.isoDate] > 0;
              const numCitas = tieneCitas ? citaCounts[day.isoDate] : 0;
 
@@ -110,23 +110,18 @@
                textColor = "#2d6a4f";
              }
 
-             // Solo domingo como fondo especial
+             // Domingo
              if (esDomingo) {
                bgColor = "#f8f9fa";
              }
         %>
           <div class="col border rounded p-2 d-flex flex-column align-items-center justify-content-center day-cell"
                style="min-height:70px; background-color:<%= bgColor %>; color:<%= textColor %>; border-color:<%= borderColor %>;">
-            <% if (!esPasado) { %>
-              <a href="/citas?fecha=<%= day.isoDate %>"
-                 class="text-decoration-none text-reset w-100 h-100 d-flex flex-column justify-content-center align-items-center">
-                <div class="fw-semibold"><%= day.day %></div>
-                <%- badgeHTML %>
-              </a>
-            <% } else { %>
+            <a href="/citas?fecha=<%= day.isoDate %>"
+               class="text-decoration-none text-reset w-100 h-100 d-flex flex-column justify-content-center align-items-center">
               <div class="fw-semibold"><%= day.day %></div>
               <%- badgeHTML %>
-            <% } %>
+            </a>
           </div>
         <% } %>
       <% }) %>
