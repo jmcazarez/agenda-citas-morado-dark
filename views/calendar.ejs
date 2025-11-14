@@ -7,16 +7,16 @@
     'Enero','Febrero','Marzo','Abril','Mayo','Junio',
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
   ];
-
-  const hoy = new Date();
-  const hoyISO = hoy.toISOString().slice(0, 10);
+  const ahoraMazatlan = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "America/Mazatlan" })
+  );
+  const hoyISO = ahoraMazatlan.toISOString().slice(0, 10);
 %>
 
 <!-- Encabezado -->
 <div class="text-center mb-3">
-  <h4 class="fw-bold text-uppercase mb-1" style="letter-spacing:0.5px;">
-    <%= nombresMes[month - 1] %> <%= year %>
-  </h4>
+  <h4 class="fw-bold text-uppercase mb-1"><%= nombresMes[month - 1] %> <%= year %></h4>
+  <p class="text-muted small mb-2">🕓 Hora local: Mazatlán (GMT-7)</p>
 
   <% 
     let totalMes = 0;
@@ -24,159 +24,162 @@
       for (const fecha in citaCounts) totalMes += citaCounts[fecha];
     }
   %>
-
   <p class="text-muted fw-semibold mb-3">
-    📅 Total de citas en el mes: 
-    <span class="text-primary"><%= totalMes %></span>
+    📅 Total de citas: <span class="text-primary"><%= totalMes %></span>
   </p>
 
-  <div class="d-flex justify-content-between align-items-center flex-nowrap gap-2 flex-column flex-sm-row">
-    <form method="get" action="/mes" class="w-100 w-sm-auto mb-2 mb-sm-0">
+  <div class="d-flex justify-content-between align-items-center flex-column flex-sm-row gap-2">
+    <form method="get" action="/mes" class="w-100 w-sm-auto">
       <input type="hidden" name="year" value="<%= month === 1 ? year - 1 : year %>">
       <input type="hidden" name="month" value="<%= month === 1 ? 12 : month - 1 %>">
-      <button class="btn btn-outline-secondary px-3 py-2 fw-semibold rounded-pill w-100" type="submit">
-        &laquo; Mes anterior
-      </button>
+      <button class="btn btn-outline-secondary w-100 rounded-pill">&laquo; Mes anterior</button>
     </form>
 
     <form method="get" action="/mes" class="w-100 w-sm-auto">
       <input type="hidden" name="year" value="<%= month === 12 ? year + 1 : year %>">
       <input type="hidden" name="month" value="<%= month === 12 ? 1 : month + 1 %>">
-      <button class="btn btn-outline-secondary px-3 py-2 fw-semibold rounded-pill w-100" type="submit">
-        Mes siguiente &raquo;
-      </button>
+      <button class="btn btn-outline-secondary w-100 rounded-pill">Mes siguiente &raquo;</button>
     </form>
   </div>
 </div>
 
-<!-- Calendario -->
-<div class="calendar-grid container-fluid p-0">
-  <div class="row g-2 g-md-3 text-center fw-semibold d-none d-sm-flex">
-    <div class="col">Dom</div>
-    <div class="col">Lun</div>
-    <div class="col">Mar</div>
-    <div class="col">Mié</div>
-    <div class="col">Jue</div>
-    <div class="col">Vie</div>
-    <div class="col">Sáb</div>
-  </div>
-
-  <% weeks.forEach(week => { %>
-    <div class="row week-row">
-      <% week.forEach((day, iDia) => { %>
-        <% if (!day) { %>
-          <div class="col bg-light border rounded py-3">&nbsp;</div>
-        <% } else { 
-             const esHoy = day.isoDate === hoyISO;
-             const fechaActual = new Date(day.isoDate);
-             const esPasado = fechaActual < hoy && !esHoy;
-             const esFuturo = fechaActual > hoy && !esHoy;
-             const esDomingo = iDia === 0; // solo domingo como fin de semana
-             const tieneCitas = typeof citaCounts !== 'undefined' && citaCounts[day.isoDate] > 0;
-             const numCitas = tieneCitas ? citaCounts[day.isoDate] : 0;
-
-             let bgColor = "#fff";
-             let textColor = "#212529";
-             let borderColor = "#dee2e6";
-             let badgeHTML = "";
-
-             // Día actual
-             if (esHoy) {
-               bgColor = "#fff3cd"; // amarillo suave
-               borderColor = "#ffecb5";
-               if (tieneCitas) {
-                 badgeHTML = `<span class='badge bg-danger small mt-1' data-bs-toggle='tooltip' 
-                   title='${numCitas} cita${numCitas > 1 ? "s" : ""} registradas'>${numCitas}</span>`;
-               }
-             }
-             // Pasado
-             else if (esPasado) {
-               bgColor = "#dee2e6"; // gris medio
-               textColor = "#495057";
-               if (tieneCitas) {
-                 badgeHTML = `<span class='badge bg-danger small mt-1' data-bs-toggle='tooltip' 
-                   title='${numCitas} cita${numCitas > 1 ? "s" : ""} registradas'>${numCitas}</span>`;
-               }
-             }
-             // Futuro con citas
-             else if (esFuturo && tieneCitas) {
-               bgColor = "#ffffff";
-               badgeHTML = `<span class='badge bg-danger small mt-1' data-bs-toggle='tooltip' 
-                 title='${numCitas} cita${numCitas > 1 ? "s" : ""} registradas'>${numCitas}</span>`;
-             }
-             // Futuro sin citas
-             else if (esFuturo && !tieneCitas) {
-               bgColor = "#e9f7ef"; // verde pastel
-               textColor = "#2d6a4f";
-             }
-
-             // Domingo
-             if (esDomingo) {
-               bgColor = "#f8f9fa";
-             }
-        %>
-          <div class="col border rounded p-2 d-flex flex-column align-items-center justify-content-center day-cell"
-               style="min-height:70px; background-color:<%= bgColor %>; color:<%= textColor %>; border-color:<%= borderColor %>;">
-            <a href="/citas?fecha=<%= day.isoDate %>"
-               class="text-decoration-none text-reset w-100 h-100 d-flex flex-column justify-content-center align-items-center">
-              <div class="fw-semibold"><%= day.day %></div>
-              <%- badgeHTML %>
-            </a>
-          </div>
-        <% } %>
-      <% }) %>
-    </div>
-  <% }) %>
+<!-- Encabezado fijo -->
+<div id="dayHeader" class="day-header sticky-top text-center fw-semibold small text-uppercase">
+  <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
 </div>
 
-<!-- Inicializar tooltips -->
+<!-- Calendario con GRID -->
+<div class="calendar-grid">
+  <% weeks.forEach(week => { week.forEach((day, iDia) => { %>
+    <% if (!day) { %>
+      <div class="day-cell empty"></div>
+    <% } else { 
+      const esHoy = day.isoDate === hoyISO;
+      const fechaActual = new Date(day.isoDate);
+      const esPasado = fechaActual < ahoraMazatlan && !esHoy;
+      const esFuturo = fechaActual > ahoraMazatlan && !esHoy;
+      const esDomingo = iDia === 0;
+      const tieneCitas = typeof citaCounts !== 'undefined' && citaCounts[day.isoDate] > 0;
+      const numCitas = tieneCitas ? citaCounts[day.isoDate] : 0;
+
+      let bgColor = "#fff";
+      let textColor = "#212529";
+      let badgeHTML = "";
+
+      if (esHoy) {
+        bgColor = "#fff3cd";
+        if (tieneCitas) badgeHTML = `<span class='badge bg-danger small'>${numCitas}</span>`;
+      } else if (esPasado) {
+        bgColor = "#dee2e6";
+        textColor = "#495057";
+        if (tieneCitas) badgeHTML = `<span class='badge bg-danger small'>${numCitas}</span>`;
+      } else if (esFuturo && tieneCitas) {
+        bgColor = "#ffffff";
+        badgeHTML = `<span class='badge bg-danger small'>${numCitas}</span>`;
+      } else if (esFuturo && !tieneCitas) {
+        bgColor = "#e9f7ef";
+        textColor = "#2d6a4f";
+      }
+      if (esDomingo) bgColor = "#f8f9fa";
+    %>
+      <div class="day-cell" style="background-color:<%= bgColor %>; color:<%= textColor %>;">
+        <a href="/citas?fecha=<%= day.isoDate %>" class="day-link">
+          <div class="day-number"><%= day.day %></div>
+          <%- badgeHTML %>
+        </a>
+      </div>
+    <% } %>
+  <% }) }) %>
+</div>
+
+<!-- JS -->
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+  document.addEventListener('DOMContentLoaded', () => {
+    const header = document.getElementById('dayHeader');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 40) header.classList.add('scrolled');
+      else header.classList.remove('scrolled');
+    });
   });
 </script>
 
 <style>
-  /* 📱 Móvil - cuadrícula alineada */
+  /* === GRID PERFECTO === */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-top: 5px;
+  }
+
+  .day-cell {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .day-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+  }
+
+  .day-number {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .day-cell.empty {
+    background-color: #f8f9fa;
+  }
+
+  /* Encabezado fijo */
+  .day-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    top: 65px;
+    background: #fff;
+    padding: 5px 0;
+    border-bottom: 1px solid #dee2e6;
+    z-index: 20;
+  }
+  .day-header.scrolled {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* Responsive móvil */
   @media (max-width: 576px) {
-    .calendar-grid .week-row {
-      gap: 0 !important;
-      margin-bottom: 0;
-    }
-    .calendar-grid .col {
-      flex: 0 0 calc(100% / 7);
-      max-width: calc(100% / 7);
-      padding: 2px;
-    }
-    .calendar-grid .day-cell {
-      border-radius: 4px;
-    }
-    .calendar-grid .col div,
-    .calendar-grid .col a {
+    .day-cell {
+      height: 65px;
       font-size: 0.8rem;
     }
-    .calendar-grid .badge {
-      font-size: 0.7rem;
-      padding: 2px 5px;
-      border-radius: 10px;
+    .calendar-grid {
+      gap: 2px;
+    }
+    .day-header {
+      top: 60px;
+      font-size: 0.75rem;
     }
   }
 
-  /* 💻 Escritorio - separación ligera */
-  @media (min-width: 768px) {
-    .calendar-grid .week-row {
-      gap: 0.4rem !important;
-      margin-bottom: 0.4rem;
-    }
-    .calendar-grid .day-cell {
-      border-radius: 10px;
-      transition: transform 0.15s ease-in-out;
-    }
-    .calendar-grid .day-cell:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
-    }
+  /* Hover */
+  .day-cell:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 4px rgba(0,0,0,0.1);
+    transition: 0.2s;
   }
 </style>
 

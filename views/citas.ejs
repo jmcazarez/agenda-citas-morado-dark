@@ -9,6 +9,7 @@
 </div>
 
 <div class="row g-4">
+  <!-- 📅 Nueva cita -->
   <div class="col-12 col-md-6">
     <div class="card shadow-sm border-0">
       <div class="card-body">
@@ -56,17 +57,19 @@
     </div>
   </div>
 
+  <!-- 📋 Citas registradas -->
   <div class="col-12 col-md-6">
     <div class="card shadow-sm border-0">
       <div class="card-body">
         <h5 class="mb-3 fw-semibold text-primary">Citas registradas</h5>
+
         <% if (!citas || citas.length === 0) { %>
           <div class="alert alert-info text-center py-3">
             No hay citas registradas para este día.
           </div>
         <% } else { %>
           <div class="table-responsive">
-            <table class="table table-striped align-middle">
+            <table class="table table-striped align-middle mb-0">
               <thead>
                 <tr class="text-center">
                   <th>Hora</th>
@@ -79,21 +82,24 @@
               <tbody>
                 <% citas.forEach(c => { %>
                   <tr>
-                    <td class="fw-bold"><%= (typeof c.hora === 'string') ? c.hora.slice(0,5) : new Date(c.hora).toTimeString().slice(0,5) %></td>
+                    <td class="fw-bold">
+                      <%= (typeof c.hora === 'string') ? c.hora.slice(0,5) : new Date(c.hora).toTimeString().slice(0,5) %>
+                    </td>
                     <td><%= c.nombre %></td>
                     <td><%= c.telefono %></td>
                     <td><%= c.lugar %></td>
                     <td class="text-center">
-                      <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
-                        <button class="btn btn-sm btn-outline-secondary px-3"
+                      <div class="acciones-cita d-flex flex-wrap justify-content-center gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-accion"
                                 type="button"
                                 data-bs-toggle="collapse"
                                 data-bs-target="#edit-<%= c.id %>">
                           ✏️ Editar
                         </button>
-                        <form action="/citas/<%= c.id %>/eliminar" method="post" onsubmit="return confirm('¿Eliminar cita?');" class="m-0">
+                        <form action="/citas/<%= c.id %>/eliminar" method="post"
+                              onsubmit="return confirm('¿Eliminar cita?');" class="m-0">
                           <input type="hidden" name="fecha" value="<%= fecha %>">
-                          <button class="btn btn-sm btn-outline-danger px-3" type="submit">
+                          <button class="btn btn-sm btn-outline-danger btn-accion" type="submit">
                             🗑️ Eliminar
                           </button>
                         </form>
@@ -101,6 +107,7 @@
                     </td>
                   </tr>
 
+                  <!-- 🔧 Formulario de edición -->
                   <tr class="collapse" id="edit-<%= c.id %>">
                     <td colspan="5">
                       <form action="/citas/<%= c.id %>/editar" method="post" class="row g-2">
@@ -121,7 +128,9 @@
                                 : new Date(c.hora).toTimeString().slice(0,5);
                             %>
                             <% horarios.forEach(h => { %>
-                              <option value="<%= h %>" <%= h === horaActual ? 'selected' : '' %>><%= h %></option>
+                              <option value="<%= h %>" <%= h === horaActual ? 'selected' : '' %>>
+                                <%= h %>
+                              </option>
                             <% }) %>
                           </select>
                         </div>
@@ -130,7 +139,9 @@
                           <% if (lugares && lugares.length > 0) { %>
                             <select name="lugar" class="form-select" required>
                               <% lugares.forEach(l => { %>
-                                <option value="<%= l.nombre %>" <%= l.nombre === c.lugar ? 'selected' : '' %>><%= l.nombre %></option>
+                                <option value="<%= l.nombre %>" <%= l.nombre === c.lugar ? 'selected' : '' %>>
+                                  <%= l.nombre %>
+                                </option>
                               <% }) %>
                             </select>
                           <% } else { %>
@@ -140,8 +151,9 @@
                         <div class="col-12 col-md-6">
                           <label class="form-label">Fecha</label>
                           <input type="date" name="fecha" class="form-control"
-                                 value="<%= (c.fecha && c.fecha.toISOString) ? c.fecha.toISOString().slice(0,10) : new Date(c.fecha).toISOString().slice(0,10) %>"
-                                 required />
+                                 value="<%= (c.fecha && c.fecha.toISOString) 
+                                   ? c.fecha.toISOString().slice(0,10)
+                                   : new Date(c.fecha).toISOString().slice(0,10) %>" required />
                         </div>
                         <div class="col-12 mt-3">
                           <button class="btn btn-success w-100 fw-semibold rounded-pill py-2" type="submit">
@@ -160,5 +172,65 @@
     </div>
   </div>
 </div>
+
+<!-- 🎨 Estilos -->
+<style>
+  /* Evita scroll horizontal en todo */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100%;
+  }
+
+  /* Asegura que la tabla no desborde */
+  .table-responsive {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  /* Alineación y tamaño fijo de botones */
+  .btn-accion {
+    width: 120px;
+    height: 38px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  /* Contenedor de botones */
+  .acciones-cita {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  /* En móviles: apilados */
+  @media (max-width: 576px) {
+    .acciones-cita {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 0.6rem !important;
+    }
+    .btn-accion {
+      width: 100%;
+      height: auto;
+      font-size: 0.95rem;
+      padding: 0.5rem 0.75rem;
+    }
+  }
+
+  /* Hover limpio */
+  @media (min-width: 577px) {
+    .btn-outline-secondary:hover {
+      background-color: #dee2e6;
+      color: #212529;
+    }
+    .btn-outline-danger:hover {
+      background-color: #dc3545;
+      color: #fff;
+    }
+  }
+</style>
 
 <%- include('partials/footer') %>
